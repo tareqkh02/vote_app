@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "220328963165",
+    "project_id": "nnbk-230cb",
+    "storage_bucket": "nnbk-230cb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:220328963165:android:d3bbfb1d8148fbec7fb1b4",
+        "android_client_info": {
+          "package_name": "com.example.vot_dapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjAN4Bu2bsucCdPNzEk2jH7sNG1ivvomE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
