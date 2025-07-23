@@ -1,0 +1,148 @@
+pragma solidity >=0.5.0 <0.9.0;
+
+contract Election {
+    struct Candidate {
+        string name;
+        uint numVotes;
+        string photoUrl;
+    }
+
+    struct Voter {
+        string name;
+        bool authorised;
+        uint whom;
+        bool voted;
+    }
+
+    address public owner;
+    string public electionName;
+
+    mapping(address => Voter) public voters;
+    Candidate[] public candidates;
+    uint public totalVotes;
+
+    uint public votingStartTime;
+    uint public votingEndTime;
+
+    modifier ownerOnly() {
+        require(msg.sender == owner, "Caller is not the owner");
+        _;
+    }
+
+    modifier duringVotingPeriod() {
+        require(block.timestamp >= votingStartTime && block.timestamp <= votingEndTime, "Voting is not active");
+        _;
+    }
+
+    function startElection(string memory _electionName) public {
+        owner = msg.sender;
+        electionName = _electionName;
+    }
+
+    function addCandidate(string memory _candidateName, string memory _photoUrl) public ownerOnly {
+        candidates.push(Candidate(_candidateName, 0, _photoUrl));
+    }
+
+    function removeCandidate(uint index) public ownerOnly {
+        require(index < candidates.length, "Invalid candidate index");
+        // Remove the candidate at the specified index
+        candidates[index] = candidates[candidates.length - 1];
+        candidates.pop();
+    }
+
+    function setCandidatePhoto(uint index, string memory _photoUrl) public ownerOnly {
+        require(index < candidates.length, "Invalid candidate index");
+        candidates[index].photoUrl = _photoUrl;
+    }
+
+    function authorizeVoter(address _voterAddress) public ownerOnly {
+        voters[_voterAddress].authorised = true;
+    }
+
+    function getNumCandidates() public view returns (uint) {
+        return candidates.length;
+    }
+
+    function startVote(
+        uint startYear, uint startMonth, uint startDay, uint startHour, uint startMinute,
+        uint endYear, uint endMonth, uint endDay, uint endHour, uint endMinute
+    ) public ownerOnly {
+        votingStartTime = toTimestamp(startYear, startMonth, startDay, startHour, startMinute);
+        votingEndTime = toTimestamp(endYear, endMonth, endDay, endHour, endMinute);
+    }
+
+    function vote(uint candidateIndex) public duringVotingPeriod {
+        require(voters[msg.sender].authorised, "Not authorized to vote");
+        require(!voters[msg.sender].voted, "Already voted");
+        require(candidateIndex < candidates.length, "Invalid candidate index");
+
+        voters[msg.sender].whom = candidateIndex;
+        voters[msg.sender].voted = true;
+
+        candidates[candidateIndex].numVotes++;
+        totalVotes++;
+    }
+
+    function resetVote() public ownerOnly {
+        for (uint i = 0; i < candidates.length; i++) {
+            candidates[i].numVotes = 0;
+        }
+
+        address[] memory voterAddresses = new address[](0); 
+
+        for (uint i = 0; i < voterAddresses.length; i++) {
+            voters[voterAddresses[i]].voted = false;
+            voters[voterAddresses[i]].whom = 0;
+        }
+
+        totalVotes = 0;
+    }
+
+    function getTotalVotes() public view returns (uint) {
+        return totalVotes;
+    }
+
+    function candidateInfo(uint index) public view returns (string memory name, uint numVotes, string memory photoUrl) {
+        Candidate memory candidate = candidates[index];
+        return (candidate.name, candidate.numVotes, candidate.photoUrl);
+    }
+
+    // Helper function to convert a date to a timestamp
+    function toTimestamp(uint year, uint month, uint day, uint hour, uint minute) internal pure returns (uint timestamp) {
+        uint[12] memory monthDayCounts = [uint(31), 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        uint numDays = day - 1;
+
+        for (uint i = 1; i < month; i++) {
+            numDays += monthDayCounts[i - 1];
+        }
+
+        // Leap year correction
+        if (month > 2 && isLeapYear(year)) {
+            numDays += 1;
+        }
+
+        numDays += 365 * (year - 1970);
+        numDays += (year - 1969) / 4;
+        numDays -= (year - 1901) / 100;
+        numDays += (year - 1601) / 400;
+
+        timestamp = numDays * 86400 + hour * 3600 + minute * 60;
+    }
+
+    // Helper function to check if a year is a leap year
+    function isLeapYear(uint year) internal pure returns (bool) {
+        if (year % 4 == 0) {
+            if (year % 100 == 0) {
+                if (year % 400 == 0) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+}
